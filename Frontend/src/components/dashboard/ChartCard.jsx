@@ -1120,7 +1120,7 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
           <select 
             value={chartType} 
             onChange={(e) => setChartType(e.target.value)}
-            className="bg-secondary/60 border-none outline-none rounded-lg px-2 py-1 text-[11px] font-semibold text-foreground cursor-pointer"
+            className="bg-white text-black border-none outline-none rounded-lg px-2 py-1 text-[11px] font-semibold cursor-pointer"
           >
             <option value="candlestick" className="text-black bg-white">Candlestick</option>
             <option value="line" className="text-black bg-white">Line Chart</option>
@@ -1281,7 +1281,7 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
                 <select 
                   value={alertTypeInput} 
                   onChange={(e) => setAlertTypeInput(e.target.value)}
-                  className="bg-secondary/40 border border-border/65 rounded text-[11px] text-foreground p-1 outline-none"
+                  className="bg-white text-black border border-border/65 rounded text-[11px] p-1 outline-none"
                 >
                   <option value="above" className="text-black bg-white">Above</option>
                   <option value="below" className="text-black bg-white">Below</option>
