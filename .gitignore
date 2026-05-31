@@ -1,0 +1,24 @@
+# Python
+Backend/.venv/
+Backend/__pycache__/
+Backend/**/*.pyc
+Backend/data/*.pkl
+Backend/data/*.h5
+Backend/data/*.pt
+Backend/models/my_private_weights/
+
+# Secrets (Add any proprietary algorithm services here)
+Backend/app/services/predict_engine.py
+.env
+.env.production
+.env.local
+.env.development
+
+# Node / React
+Frontend/node_modules/
+Frontend/dist/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
