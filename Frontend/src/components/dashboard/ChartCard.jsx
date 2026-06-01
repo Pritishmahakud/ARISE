@@ -142,9 +142,20 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
     if (!symbol) return undefined;
 
     // Connect to Backend WebSocket
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
-    const wsUrl = `${protocol}//${host}/api/ws/live`;
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    let wsUrl;
+    if (envUrl) {
+      wsUrl = `${envUrl.replace(/^http/, "ws").replace(/\/$/, "")}/api/ws/live`;
+    } else {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      let host = window.location.host;
+      if (host.includes("5173")) {
+        host = host.replace("5173", "8000");
+      } else if (host.includes("3000")) {
+        host = host.replace("3000", "8000");
+      }
+      wsUrl = `${protocol}//${host}/api/ws/live`;
+    }
     let ws = null;
     let reconnectTimeout = null;
 

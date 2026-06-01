@@ -127,6 +127,127 @@ export default function App() {
     };
   }, []);
 
+  // Live WebSocket updates for the active symbol (stock or index)
+  useEffect(() => {
+    const symbolToSubscribe = activeIndex || selectedSymbol;
+    if (!symbolToSubscribe) return undefined;
+
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    let wsUrl;
+    if (envUrl) {
+      wsUrl = `${envUrl.replace(/^http/, "ws").replace(/\/$/, "")}/api/ws/live`;
+    } else {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      let host = window.location.host;
+      if (host.includes("5173")) {
+        host = host.replace("5173", "8000");
+      } else if (host.includes("3000")) {
+        host = host.replace("3000", "8000");
+      }
+      wsUrl = `${protocol}//${host}/api/ws/live`;
+    }
+
+    let ws = null;
+    let reconnectTimeout = null;
+
+    function connect() {
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ action: "subscribe", symbol: symbolToSubscribe }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const tick = JSON.parse(event.data);
+          if (tick.symbol === symbolToSubscribe.toUpperCase()) {
+            if (!activeIndex) {
+              setDashboard((prev) => {
+                if (!prev || !prev.overview || !prev.overview.quote) return prev;
+                if (prev.overview.quote.symbol !== tick.symbol) return prev;
+                return {
+                  ...prev,
+                  overview: {
+                    ...prev.overview,
+                    quote: {
+                      ...prev.overview.quote,
+                      current_price: tick.price,
+                      percent_change: tick.percent_change,
+                      volume: tick.volume,
+                      day_high: tick.price > (prev.overview.quote.day_high || 0) ? tick.price : prev.overview.quote.day_high,
+                      day_low: tick.price < (prev.overview.quote.day_low || Infinity) ? tick.price : prev.overview.quote.day_low,
+                    },
+                  },
+                };
+              });
+            } else {
+              setIndexData((prev) => {
+                if (!prev || !prev.overview || !prev.overview.quote) return prev;
+                if (prev.overview.quote.symbol !== tick.symbol) return prev;
+                return {
+                  ...prev,
+                  overview: {
+                    ...prev.overview,
+                    quote: {
+                      ...prev.overview.quote,
+                      current_price: tick.price,
+                      percent_change: tick.percent_change,
+                      volume: tick.volume,
+                      day_high: tick.price > (prev.overview.quote.day_high || 0) ? tick.price : prev.overview.quote.day_high,
+                      day_low: tick.price < (prev.overview.quote.day_low || Infinity) ? tick.price : prev.overview.quote.day_low,
+                    },
+                  },
+                };
+              });
+            }
+
+            // Also update indicesTape if the tick symbol matches one of the indices in the marquee
+            setIndicesTape((prevTape) => {
+              if (!prevTape || prevTape.length === 0) return prevTape;
+              return prevTape.map((item) => {
+                const itemSymbol = item.quote?.symbol || item.name;
+                if (
+                  itemSymbol.toUpperCase() === tick.symbol.toUpperCase() ||
+                  (item.name === "NIFTY 50" && tick.symbol === "^NSEI") ||
+                  (item.name === "BANKNIFTY" && tick.symbol === "^NSEBANK") ||
+                  (item.name === "FINNIFTY" && tick.symbol === "NIFTY_FIN_SERVICE.NS") ||
+                  (item.name === "SENSEX" && tick.symbol === "^BSESN")
+                ) {
+                  return {
+                    ...item,
+                    quote: {
+                      ...item.quote,
+                      current_price: tick.price,
+                      percent_change: tick.percent_change,
+                    }
+                  };
+                }
+                return item;
+              });
+            });
+          }
+        } catch (e) {
+          console.error("App WebSocket message error", e);
+        }
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+
+      ws.onclose = () => {
+        reconnectTimeout = setTimeout(connect, 3000);
+      };
+    }
+
+    connect();
+
+    return () => {
+      if (ws) ws.close();
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    };
+  }, [selectedSymbol, activeIndex]);
+
   // Fetch stock dashboard data
   useEffect(() => {
     let cancelled = false;
