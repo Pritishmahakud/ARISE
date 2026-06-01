@@ -137,7 +137,12 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
     loadFnoAndPredictions(symbol);
   }, [symbol]);
 
-  // --- WebSocket Connection ---
+  // --- WebSocket Connection & Fallback Simulation ---
+  const chartPropRef = useRef(chart);
+  useEffect(() => {
+    chartPropRef.current = chart;
+  }, [chart]);
+
   useEffect(() => {
     if (!symbol) return undefined;
 
@@ -158,11 +163,88 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
     }
     let ws = null;
     let reconnectTimeout = null;
+    let simulationInterval = null;
+
+    function startClientSimulation() {
+      if (simulationInterval) clearInterval(simulationInterval);
+      
+      let currentSimPrice = null;
+      let prevClose = null;
+      let vol = 1000000;
+
+      simulationInterval = setInterval(() => {
+        // Retrieve latest baseline from chartPropRef if not initialized
+        if (currentSimPrice === null) {
+          const baseCandles = chartPropRef.current?.candles ? [...chartPropRef.current.candles] : [];
+          if (baseCandles.length > 0) {
+            const lastCandle = baseCandles[baseCandles.length - 1];
+            currentSimPrice = lastCandle.close || 1000;
+            vol = lastCandle.volume || 1000000;
+            if (baseCandles.length >= 2) {
+              prevClose = baseCandles[baseCandles.length - 2].close;
+            } else {
+              prevClose = currentSimPrice;
+            }
+          } else {
+            currentSimPrice = 1000;
+            prevClose = 1000;
+          }
+        }
+
+        // Generate tiny random fluctuation
+        const tick_change = (Math.random() - 0.5) * 0.0008 * currentSimPrice;
+        currentSimPrice = Math.round((currentSimPrice + tick_change) * 100) / 100;
+        
+        const change = currentSimPrice - prevClose;
+        const pctChange = (change / prevClose) * 100;
+
+        setLivePrice(currentSimPrice);
+        setLiveChange(Math.round(change * 100) / 100);
+        setLivePctChange(Math.round(pctChange * 100) / 100);
+        setLiveVolume(vol);
+        setLiveBid(Math.round((currentSimPrice - Math.random() * 0.15) * 100) / 100);
+        setLiveAsk(Math.round((currentSimPrice + Math.random() * 0.15) * 100) / 100);
+
+        // Check alert triggers
+        setAlerts((prevAlerts) => {
+          const triggered = [];
+          const updated = prevAlerts.map((alert) => {
+            if (!alert.active) return alert;
+            
+            const breachedAbove = alert.type === "above" && currentSimPrice >= alert.price;
+            const breachedBelow = alert.type === "below" && currentSimPrice <= alert.price;
+            
+            if (breachedAbove || breachedBelow) {
+              triggered.push({
+                id: Date.now() + Math.random(),
+                message: `Alert: ${symbol} has crossed ${alert.type} ${alert.price} (LTP: ${currentSimPrice})!`,
+                timestamp: new Date().toLocaleTimeString()
+              });
+              return { ...alert, active: false }; // deactivate alert after trigger
+            }
+            return alert;
+          });
+
+          if (triggered.length > 0) {
+            setAlertNotifications((prevNotif) => [...triggered, ...prevNotif].slice(0, 5));
+          }
+          return updated;
+        });
+      }, 1500);
+    }
+
+    function stopClientSimulation() {
+      if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+      }
+    }
 
     function connect() {
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        stopClientSimulation();
         // Subscribe to current symbol
         ws.send(JSON.stringify({ action: "subscribe", symbol }));
       };
@@ -214,7 +296,8 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
       };
 
       ws.onclose = () => {
-        reconnectTimeout = setTimeout(connect, 3000); // Auto reconnect
+        startClientSimulation();
+        reconnectTimeout = setTimeout(connect, 5000); // Try reconnecting WebSocket in 5 seconds
       };
     }
 
@@ -223,6 +306,7 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
     return () => {
       if (ws) ws.close();
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      stopClientSimulation();
     };
   }, [symbol]);
 

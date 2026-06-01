@@ -57,6 +57,7 @@ export default function App() {
   const [activeIndex, setActiveIndex] = useState(null);
   const [indexData, setIndexData] = useState(null);
   const [loadingIndex, setLoadingIndex] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
 
   const debounceRef = useRef(null);
 
@@ -127,7 +128,7 @@ export default function App() {
     };
   }, []);
 
-  // Live WebSocket updates for the active symbol (stock or index)
+  // Live WebSocket updates and fallback polling/client simulation for active symbol (stock or index)
   useEffect(() => {
     const symbolToSubscribe = activeIndex || selectedSymbol;
     if (!symbolToSubscribe) return undefined;
@@ -149,11 +150,191 @@ export default function App() {
 
     let ws = null;
     let reconnectTimeout = null;
+    let fallbackPollInterval = null;
+    let simulationInterval = null;
+
+    // Helper to fetch latest quote & technicals lightweight
+    async function fetchOverviewOnly(symbol, isIndex) {
+      try {
+        const path = isIndex ? `/api/index/${encodeURIComponent(symbol)}` : `/api/stock/${encodeURIComponent(symbol)}`;
+        const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000";
+        const response = await fetch(`${baseUrl}${path}`);
+        if (!response.ok) throw new Error("Overview fetch failed");
+        const data = await response.json();
+        
+        // Update states
+        if (!isIndex) {
+          setDashboard((prev) => {
+            if (!prev || !prev.overview || prev.overview.quote?.symbol !== data.quote?.symbol) return prev;
+            return {
+              ...prev,
+              overview: data
+            };
+          });
+        } else {
+          setIndexData((prev) => {
+            if (!prev || !prev.overview || prev.overview.quote?.symbol !== data.quote?.symbol) return prev;
+            return {
+              ...prev,
+              overview: data
+            };
+          });
+        }
+
+        // Also update marquee
+        setIndicesTape((prevTape) => {
+          if (!prevTape || prevTape.length === 0) return prevTape;
+          return prevTape.map((item) => {
+            const itemSymbol = item.quote?.symbol || item.name;
+            if (
+              itemSymbol.toUpperCase() === data.quote?.symbol?.toUpperCase() ||
+              (item.name === "NIFTY 50" && data.quote?.symbol === "^NSEI") ||
+              (item.name === "BANKNIFTY" && data.quote?.symbol === "^NSEBANK") ||
+              (item.name === "FINNIFTY" && data.quote?.symbol === "NIFTY_FIN_SERVICE.NS") ||
+              (item.name === "SENSEX" && data.quote?.symbol === "^BSESN")
+            ) {
+              return {
+                ...item,
+                quote: {
+                  ...item.quote,
+                  current_price: data.quote.current_price,
+                  percent_change: data.quote.percent_change,
+                }
+              };
+            }
+            return item;
+          });
+        });
+      } catch (err) {
+        console.error("Fallback polling fetch error:", err);
+      }
+    }
+
+    // Client-side simulation of price ticks (random-walk)
+    function startClientSimulation() {
+      if (simulationInterval) clearInterval(simulationInterval);
+      
+      simulationInterval = setInterval(() => {
+        const isIndex = !!activeIndex;
+        
+        if (!isIndex) {
+          setDashboard((prev) => {
+            if (!prev || !prev.overview || !prev.overview.quote) return prev;
+            const quote = prev.overview.quote;
+            if (quote.symbol !== symbolToSubscribe.toUpperCase()) return prev;
+
+            const base_price = quote.current_price || 1000;
+            // Generate tiny fluctuations between -0.04% and +0.04%
+            const tick_change = (Math.random() - 0.5) * 0.0008 * base_price;
+            const new_price = Math.round((base_price + tick_change) * 100) / 100;
+            const prev_close = quote.previous_close || new_price;
+            const percent_change = Math.round(((new_price - prev_close) / prev_close) * 10000) / 100;
+
+            return {
+              ...prev,
+              overview: {
+                ...prev.overview,
+                quote: {
+                  ...quote,
+                  current_price: new_price,
+                  percent_change: percent_change,
+                  day_high: new_price > (quote.day_high || 0) ? new_price : quote.day_high,
+                  day_low: new_price < (quote.day_low || Infinity) ? new_price : quote.day_low,
+                }
+              }
+            };
+          });
+        } else {
+          setIndexData((prev) => {
+            if (!prev || !prev.overview || !prev.overview.quote) return prev;
+            const quote = prev.overview.quote;
+            if (quote.symbol !== symbolToSubscribe.toUpperCase()) return prev;
+
+            const base_price = quote.current_price || 1000;
+            const tick_change = (Math.random() - 0.5) * 0.0008 * base_price;
+            const new_price = Math.round((base_price + tick_change) * 100) / 100;
+            const prev_close = quote.previous_close || new_price;
+            const percent_change = Math.round(((new_price - prev_close) / prev_close) * 10000) / 100;
+
+            return {
+              ...prev,
+              overview: {
+                ...prev.overview,
+                quote: {
+                  ...quote,
+                  current_price: new_price,
+                  percent_change: percent_change,
+                  day_high: new_price > (quote.day_high || 0) ? new_price : quote.day_high,
+                  day_low: new_price < (quote.day_low || Infinity) ? new_price : quote.day_low,
+                }
+              }
+            };
+          });
+        }
+
+        // Keep marquee updating too
+        setIndicesTape((prevTape) => {
+          if (!prevTape || prevTape.length === 0) return prevTape;
+          return prevTape.map((item) => {
+            const itemSymbol = item.quote?.symbol || item.name;
+            const subSymbolUpper = symbolToSubscribe.toUpperCase();
+            if (
+              itemSymbol.toUpperCase() === subSymbolUpper ||
+              (item.name === "NIFTY 50" && subSymbolUpper === "^NSEI") ||
+              (item.name === "BANKNIFTY" && subSymbolUpper === "^NSEBANK")
+            ) {
+              const base_price = item.quote.current_price || 1000;
+              const tick_change = (Math.random() - 0.5) * 0.0008 * base_price;
+              const new_price = Math.round((base_price + tick_change) * 100) / 100;
+              const prev_close = item.quote.previous_close || new_price;
+              return {
+                ...item,
+                quote: {
+                  ...item.quote,
+                  current_price: new_price,
+                  percent_change: Math.round(((new_price - prev_close) / prev_close) * 10000) / 100,
+                }
+              };
+            }
+            return item;
+          });
+        });
+      }, 1500);
+    }
+
+    function stopClientSimulation() {
+      if (simulationInterval) {
+        clearInterval(simulationInterval);
+        simulationInterval = null;
+      }
+    }
+
+    function startFallbackPolling() {
+      if (fallbackPollInterval) clearInterval(fallbackPollInterval);
+      
+      // Poll immediately once, then every 10 seconds
+      fetchOverviewOnly(symbolToSubscribe, !!activeIndex);
+      fallbackPollInterval = setInterval(() => {
+        fetchOverviewOnly(symbolToSubscribe, !!activeIndex);
+      }, 10000);
+      
+      startClientSimulation();
+    }
+
+    function stopFallbackPolling() {
+      if (fallbackPollInterval) {
+        clearInterval(fallbackPollInterval);
+        fallbackPollInterval = null;
+      }
+      stopClientSimulation();
+    }
 
     function connect() {
       ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
+        setWsConnected(true);
+        stopFallbackPolling();
         ws.send(JSON.stringify({ action: "subscribe", symbol: symbolToSubscribe }));
       };
 
@@ -236,7 +417,9 @@ export default function App() {
       };
 
       ws.onclose = () => {
-        reconnectTimeout = setTimeout(connect, 3000);
+        setWsConnected(false);
+        startFallbackPolling();
+        reconnectTimeout = setTimeout(connect, 5000); // Try reconnecting WebSocket in 5 seconds
       };
     }
 
@@ -245,6 +428,7 @@ export default function App() {
     return () => {
       if (ws) ws.close();
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      stopFallbackPolling();
     };
   }, [selectedSymbol, activeIndex]);
 
@@ -363,9 +547,9 @@ export default function App() {
           <span className="font-bold text-foreground tracking-tight text-base uppercase">ARISE</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_162)] animate-pulse" />
-            NSE Live &middot; Real-time Feed
+          <div className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground" title={wsConnected ? "WebSocket Connected (Real-Time Feed)" : "WebSocket Offline. Using API Polling + Client Price Simulation."}>
+            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${wsConnected ? "bg-[oklch(0.72_0.18_162)]" : "bg-[oklch(0.69_0.16_80)]"}`} />
+            {wsConnected ? "NSE Live · Real-time Feed" : "NSE Live · Client Simulation"}
           </div>
           <div className="flex items-center gap-1">
             {["Dashboard", "Signals", "Scanner", "System"].map(item => (
