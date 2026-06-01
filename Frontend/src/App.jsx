@@ -229,6 +229,9 @@ export default function App() {
             const new_price = Math.round((base_price + tick_change) * 100) / 100;
             const prev_close = quote.previous_close || new_price;
             const percent_change = Math.round(((new_price - prev_close) / prev_close) * 10000) / 100;
+            const change = Math.round((new_price - prev_close) * 100) / 100;
+            const bid = Math.round((new_price - Math.random() * 0.15) * 100) / 100;
+            const ask = Math.round((new_price + Math.random() * 0.15) * 100) / 100;
 
             return {
               ...prev,
@@ -238,6 +241,9 @@ export default function App() {
                   ...quote,
                   current_price: new_price,
                   percent_change: percent_change,
+                  change: change,
+                  bid: bid,
+                  ask: ask,
                   day_high: new_price > (quote.day_high || 0) ? new_price : quote.day_high,
                   day_low: new_price < (quote.day_low || Infinity) ? new_price : quote.day_low,
                 }
@@ -255,6 +261,9 @@ export default function App() {
             const new_price = Math.round((base_price + tick_change) * 100) / 100;
             const prev_close = quote.previous_close || new_price;
             const percent_change = Math.round(((new_price - prev_close) / prev_close) * 10000) / 100;
+            const change = Math.round((new_price - prev_close) * 100) / 100;
+            const bid = Math.round((new_price - Math.random() * 0.15) * 100) / 100;
+            const ask = Math.round((new_price + Math.random() * 0.15) * 100) / 100;
 
             return {
               ...prev,
@@ -264,6 +273,9 @@ export default function App() {
                   ...quote,
                   current_price: new_price,
                   percent_change: percent_change,
+                  change: change,
+                  bid: bid,
+                  ask: ask,
                   day_high: new_price > (quote.day_high || 0) ? new_price : quote.day_high,
                   day_low: new_price < (quote.day_low || Infinity) ? new_price : quote.day_low,
                 }
@@ -355,6 +367,9 @@ export default function App() {
                       current_price: tick.price,
                       percent_change: tick.percent_change,
                       volume: tick.volume,
+                      change: tick.change,
+                      bid: tick.bid,
+                      ask: tick.ask,
                       day_high: tick.price > (prev.overview.quote.day_high || 0) ? tick.price : prev.overview.quote.day_high,
                       day_low: tick.price < (prev.overview.quote.day_low || Infinity) ? tick.price : prev.overview.quote.day_low,
                     },
@@ -374,6 +389,9 @@ export default function App() {
                       current_price: tick.price,
                       percent_change: tick.percent_change,
                       volume: tick.volume,
+                      change: tick.change,
+                      bid: tick.bid,
+                      ask: tick.ask,
                       day_high: tick.price > (prev.overview.quote.day_high || 0) ? tick.price : prev.overview.quote.day_high,
                       day_low: tick.price < (prev.overview.quote.day_low || Infinity) ? tick.price : prev.overview.quote.day_low,
                     },
@@ -627,6 +645,7 @@ export default function App() {
                 onChangeInterval={setChartInterval}
                 technicals={indexData?.overview?.technicals}
                 loading={loadingIndex}
+                quote={indexData?.overview?.quote}
               />
               <div className="mt-5">
                 <NewsFeedSection articles={indexData?.news?.articles || []} />
@@ -653,6 +672,7 @@ export default function App() {
                   onChangeInterval={setChartInterval}
                   technicals={technicals}
                   loading={loading}
+                  quote={quote}
                 />
               </div>
             </div>
