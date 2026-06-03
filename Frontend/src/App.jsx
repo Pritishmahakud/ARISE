@@ -165,17 +165,25 @@ export default function App() {
         // Update states
         if (!isIndex) {
           setDashboard((prev) => {
-            if (!prev || !prev.overview || prev.overview.quote?.symbol !== data.quote?.symbol) return prev;
+            if (data?.quote?.symbol !== symbol.toUpperCase()) return prev;
             return {
-              ...prev,
+              ...(prev || {}),
               overview: data
             };
           });
         } else {
           setIndexData((prev) => {
-            if (!prev || !prev.overview || prev.overview.quote?.symbol !== data.quote?.symbol) return prev;
+            const symUpper = symbol.toUpperCase();
+            const dataSym = data?.quote?.symbol;
+            const matchesIndex = 
+              dataSym === symUpper ||
+              (symUpper === "NIFTY 50" && dataSym === "^NSEI") ||
+              (symUpper === "BANKNIFTY" && dataSym === "^NSEBANK") ||
+              (symUpper === "FINNIFTY" && dataSym === "NIFTY_FIN_SERVICE.NS") ||
+              (symUpper === "SENSEX" && dataSym === "^BSESN");
+            if (!matchesIndex) return prev;
             return {
-              ...prev,
+              ...(prev || {}),
               overview: data
             };
           });

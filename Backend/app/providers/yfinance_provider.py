@@ -13,6 +13,10 @@ class YFinanceProvider:
         return ticker.history(period=period, interval=interval, auto_adjust=False)
 
     def get_info(self, symbol: str) -> dict:
-        ticker = self.get_ticker(symbol)
-        return ticker.info or {}
+        try:
+            ticker = self.get_ticker(symbol)
+            return ticker.info or {}
+        except Exception as e:
+            print(f"Error fetching info for {symbol}: {e}")
+            return {}
 
