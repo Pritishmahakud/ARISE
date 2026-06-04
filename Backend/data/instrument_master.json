@@ -1,5 +1,5 @@
 {
-  "last_refreshed_at": 1780235641.0164115,
+  "last_refreshed_at": 1780601572.652808,
   "instruments": [
     {
       "symbol": "NIFTY 50",
@@ -544,6 +544,12 @@
     {
       "symbol": "AGROPHOS",
       "name": "Agro Phos India Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
+      "symbol": "AGSTRA",
+      "name": "AGS Transact Technologies Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -1412,12 +1418,6 @@
       "exchange": "NSE"
     },
     {
-      "symbol": "AVAILFC",
-      "name": "Available Finance Limited",
-      "type": "stock",
-      "exchange": "NSE"
-    },
-    {
       "symbol": "AVALON",
       "name": "Avalon Technologies Limited",
       "type": "stock",
@@ -2014,6 +2014,12 @@
     {
       "symbol": "BIL",
       "name": "Bhartiya International Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
+      "symbol": "BILVYAPAR",
+      "name": "BIL VYAPAR LIMITED",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -2696,6 +2702,12 @@
       "exchange": "NSE"
     },
     {
+      "symbol": "CLCIND",
+      "name": "CLC Industries Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
       "symbol": "CLEAN",
       "name": "Clean Science and Technology Limited",
       "type": "stock",
@@ -3304,6 +3316,12 @@
     {
       "symbol": "DHANUKA",
       "name": "Dhanuka Agritech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
+      "symbol": "DHARAN",
+      "name": "DHARAN INFRA-EPC LIMITED",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -4432,6 +4450,12 @@
     {
       "symbol": "GENESYS",
       "name": "Genesys International Corporation Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
+      "symbol": "GENSOL",
+      "name": "Gensol Engineering Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -8054,6 +8078,12 @@
       "exchange": "NSE"
     },
     {
+      "symbol": "MERCURYEV",
+      "name": "Mercury Ev-Tech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
       "symbol": "METROBRAND",
       "name": "Metro Brands Limited",
       "type": "stock",
@@ -10382,6 +10412,12 @@
       "exchange": "NSE"
     },
     {
+      "symbol": "RELINFRA",
+      "name": "Reliance Infrastructure Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
       "symbol": "RELTD",
       "name": "Ravindra Energy Limited",
       "type": "stock",
@@ -10768,6 +10804,12 @@
     {
       "symbol": "SAATVIKGL",
       "name": "Saatvik Green Energy Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
+      "symbol": "SABEVENTS",
+      "name": "Sab Events & Governance Now Media Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -11252,6 +11294,12 @@
       "exchange": "NSE"
     },
     {
+      "symbol": "SETUINFRA",
+      "name": "Setubandhan Infrastructure Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
       "symbol": "SEYAIND",
       "name": "Seya Industries Limited",
       "type": "stock",
@@ -11644,6 +11692,12 @@
     {
       "symbol": "SILVERTUC",
       "name": "Silver Touch Technologies Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
+      "symbol": "SIMBHALS",
+      "name": "Simbhaoli Sugars Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -13766,6 +13820,12 @@
       "exchange": "NSE"
     },
     {
+      "symbol": "VIVIANA",
+      "name": "Viviana Power Tech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    {
       "symbol": "VIVIDHA",
       "name": "Visagar Polytex Limited",
       "type": "stock",
@@ -15336,6 +15396,18 @@
     "agro phos india limited": {
       "symbol": "AGROPHOS",
       "name": "Agro Phos India Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "agstra": {
+      "symbol": "AGSTRA",
+      "name": "AGS Transact Technologies Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "ags transact technologies limited": {
+      "symbol": "AGSTRA",
+      "name": "AGS Transact Technologies Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -17187,18 +17259,6 @@
       "type": "stock",
       "exchange": "NSE"
     },
-    "availfc": {
-      "symbol": "AVAILFC",
-      "name": "Available Finance Limited",
-      "type": "stock",
-      "exchange": "NSE"
-    },
-    "available finance limited": {
-      "symbol": "AVAILFC",
-      "name": "Available Finance Limited",
-      "type": "stock",
-      "exchange": "NSE"
-    },
     "avalon": {
       "symbol": "AVALON",
       "name": "Avalon Technologies Limited",
@@ -18468,6 +18528,18 @@
     "bhartiya international limited": {
       "symbol": "BIL",
       "name": "Bhartiya International Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "bilvyapar": {
+      "symbol": "BILVYAPAR",
+      "name": "BIL VYAPAR LIMITED",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "bil vyapar limited": {
+      "symbol": "BILVYAPAR",
+      "name": "BIL VYAPAR LIMITED",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -19899,6 +19971,18 @@
       "type": "stock",
       "exchange": "NSE"
     },
+    "clcind": {
+      "symbol": "CLCIND",
+      "name": "CLC Industries Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "clc industries limited": {
+      "symbol": "CLCIND",
+      "name": "CLC Industries Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
     "clean": {
       "symbol": "CLEAN",
       "name": "Clean Science and Technology Limited",
@@ -21192,6 +21276,24 @@
     "dhanuka agritech limited": {
       "symbol": "DHANUKA",
       "name": "Dhanuka Agritech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "dharan": {
+      "symbol": "DHARAN",
+      "name": "DHARAN INFRA-EPC LIMITED",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "dharan infra-epc limited": {
+      "symbol": "DHARAN",
+      "name": "DHARAN INFRA-EPC LIMITED",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "dharan infra epc limited": {
+      "symbol": "DHARAN",
+      "name": "DHARAN INFRA-EPC LIMITED",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -23580,6 +23682,18 @@
     "genesys international corporation limited": {
       "symbol": "GENESYS",
       "name": "Genesys International Corporation Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "gensol": {
+      "symbol": "GENSOL",
+      "name": "Gensol Engineering Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "gensol engineering limited": {
+      "symbol": "GENSOL",
+      "name": "Gensol Engineering Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -31269,6 +31383,24 @@
       "type": "stock",
       "exchange": "NSE"
     },
+    "mercuryev": {
+      "symbol": "MERCURYEV",
+      "name": "Mercury Ev-Tech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "mercury ev-tech limited": {
+      "symbol": "MERCURYEV",
+      "name": "Mercury Ev-Tech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "mercury ev tech limited": {
+      "symbol": "MERCURYEV",
+      "name": "Mercury Ev-Tech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
     "metrobrand": {
       "symbol": "METROBRAND",
       "name": "Metro Brands Limited",
@@ -36117,6 +36249,18 @@
       "type": "stock",
       "exchange": "NSE"
     },
+    "relinfra": {
+      "symbol": "RELINFRA",
+      "name": "Reliance Infrastructure Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "reliance infrastructure limited": {
+      "symbol": "RELINFRA",
+      "name": "Reliance Infrastructure Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
     "reltd": {
       "symbol": "RELTD",
       "name": "Ravindra Energy Limited",
@@ -36930,6 +37074,24 @@
     "saatvik green energy limited": {
       "symbol": "SAATVIKGL",
       "name": "Saatvik Green Energy Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "sabevents": {
+      "symbol": "SABEVENTS",
+      "name": "Sab Events & Governance Now Media Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "sab events & governance now media limited": {
+      "symbol": "SABEVENTS",
+      "name": "Sab Events & Governance Now Media Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "sab events governance now media limited": {
+      "symbol": "SABEVENTS",
+      "name": "Sab Events & Governance Now Media Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -37935,6 +38097,18 @@
       "type": "stock",
       "exchange": "NSE"
     },
+    "setuinfra": {
+      "symbol": "SETUINFRA",
+      "name": "Setubandhan Infrastructure Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "setubandhan infrastructure limited": {
+      "symbol": "SETUINFRA",
+      "name": "Setubandhan Infrastructure Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
     "seyaind": {
       "symbol": "SEYAIND",
       "name": "Seya Industries Limited",
@@ -38766,6 +38940,18 @@
     "silver touch technologies limited": {
       "symbol": "SILVERTUC",
       "name": "Silver Touch Technologies Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "simbhals": {
+      "symbol": "SIMBHALS",
+      "name": "Simbhaoli Sugars Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "simbhaoli sugars limited": {
+      "symbol": "SIMBHALS",
+      "name": "Simbhaoli Sugars Limited",
       "type": "stock",
       "exchange": "NSE"
     },
@@ -43212,6 +43398,18 @@
     "vital chemtech limited": {
       "symbol": "VITAL",
       "name": "Vital Chemtech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "viviana": {
+      "symbol": "VIVIANA",
+      "name": "Viviana Power Tech Limited",
+      "type": "stock",
+      "exchange": "NSE"
+    },
+    "viviana power tech limited": {
+      "symbol": "VIVIANA",
+      "name": "Viviana Power Tech Limited",
       "type": "stock",
       "exchange": "NSE"
     },

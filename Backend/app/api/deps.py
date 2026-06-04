@@ -13,6 +13,8 @@ from app.services.screener_service import ScreenerService
 from app.services.search_service import SearchService
 from app.services.technicals_service import TechnicalsService
 from app.services.fno_service import FNOService
+from app.services.analytics_service import AnalyticsService
+
 
 
 @lru_cache
@@ -53,8 +55,8 @@ def get_instrument_master_service() -> InstrumentMasterService:
 @lru_cache
 def get_screener_service() -> ScreenerService:
     return ScreenerService(get_market_data_service())
-
-
+@lru_cache
+def get_fno_service() -> FNOService:
     return FNOService(get_market_data_service(), get_technicals_service())
 
 
