@@ -24,11 +24,13 @@ class MarketDataService:
         previous_close = info.get("previousClose")
 
         if not history.empty:
-            if not current_price:
-                current_price = float(history["Close"].iloc[-1])
-            if not previous_close and len(history) >= 2:
-                previous_close = float(history["Close"].iloc[-2])
-            elif not previous_close:
+            if not current_price or pd.isna(current_price):
+                val = history["Close"].iloc[-1]
+                current_price = float(val) if pd.notna(val) else None
+            if (not previous_close or pd.isna(previous_close)) and len(history) >= 2:
+                val = history["Close"].iloc[-2]
+                previous_close = float(val) if pd.notna(val) else None
+            elif not previous_close or pd.isna(previous_close):
                 previous_close = current_price
 
         percent_change = None
@@ -42,7 +44,7 @@ class MarketDataService:
             if len(history) >= 2:
                 first_close = float(history["Close"].iloc[0])
                 last_close = float(history["Close"].iloc[-1])
-                if first_close:
+                if first_close and pd.notna(first_close) and pd.notna(last_close):
                     percent_change_30d = round(((last_close - first_close) / first_close) * 100, 2)
 
         open_price = info.get("open")
@@ -51,14 +53,19 @@ class MarketDataService:
         volume = info.get("volume")
 
         if not history.empty:
-            if not open_price:
-                open_price = float(history["Open"].iloc[-1])
-            if not day_high:
-                day_high = float(history["High"].iloc[-1])
-            if not day_low:
-                day_low = float(history["Low"].iloc[-1])
-            if not volume:
-                volume = int(history["Volume"].iloc[-1])
+            if not open_price or pd.isna(open_price):
+                val = history["Open"].iloc[-1]
+                open_price = float(val) if pd.notna(val) else None
+            if not day_high or pd.isna(day_high):
+                val = history["High"].iloc[-1]
+                day_high = float(val) if pd.notna(val) else None
+            if not day_low or pd.isna(day_low):
+                val = history["Low"].iloc[-1]
+                day_low = float(val) if pd.notna(val) else None
+            if not volume or pd.isna(volume):
+                val = history["Volume"].iloc[-1]
+                volume = int(val) if pd.notna(val) else None
+
 
         res = QuoteSnapshot(
             symbol=symbol.upper(),

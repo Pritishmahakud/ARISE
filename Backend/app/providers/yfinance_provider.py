@@ -10,7 +10,11 @@ class YFinanceProvider:
 
     def get_history(self, symbol: str, period: str = "1y", interval: str = "1d") -> DataFrame:
         ticker = self.get_ticker(symbol)
-        return ticker.history(period=period, interval=interval, auto_adjust=False)
+        df = ticker.history(period=period, interval=interval, auto_adjust=False)
+        if not df.empty:
+            df = df.dropna(subset=["Close"])
+        return df
+
 
     def get_info(self, symbol: str) -> dict:
         try:
