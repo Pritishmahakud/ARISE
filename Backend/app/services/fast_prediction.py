@@ -20,7 +20,8 @@ def _simple_features(df: pd.DataFrame) -> dict:
         losses = (-delta.clip(upper=0)).rolling(14).mean()
         rs = gains / (losses.replace(0, np.nan))
         rsi = 100 - (100 / (1 + rs))
-        rsi = rsi.iloc[-1] if not pd.isna(rsi) else 50
+        val = rsi.iloc[-1]
+        rsi = val if pd.notna(val) else 50
 
     ema_fast = close.ewm(span=9, adjust=False).mean().iloc[-1]
     ema_slow = close.ewm(span=20, adjust=False).mean().iloc[-1]

@@ -6,6 +6,9 @@ from app.models.analysis import AnalysisResponse, SignalScore
 from app.models.news import NewsArticle
 from app.models.stock import QuoteSnapshot, TechnicalSnapshot
 from app.providers.gemini_provider import GeminiProvider
+from app.providers.yfinance_provider import YFinanceProvider
+from app.core.redis import cache
+from app.core.config import settings
 
 
 POSITIVE_KEYWORDS = {
