@@ -133,18 +133,44 @@ def _prepare_training_data(df: pd.DataFrame, lookback: int = 50, horizon: int = 
     return X, y
 
 
+import threading
+import logging
+
+logger = logging.getLogger("arise.ml")
+
+MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "models")
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+_ml_lock = threading.Lock()
+
+
 class MultiHorizonPredictor:
     def __init__(self):
         self.models = {}
         self.scalers = {}
 
-    def _create_features(self, series: str) -> str:
-        return f"model_{series}"
+    def _get_paths(self, symbol: str, horizon: str) -> tuple[str, str]:
+        sym = symbol.upper()
+        model_path = os.path.join(MODEL_DIR, f"{sym}_{horizon}_model.joblib")
+        scaler_path = os.path.join(MODEL_DIR, f"{sym}_{horizon}_scaler.joblib")
+        return model_path, scaler_path
+
+    def load_for_symbol(self, symbol: str) -> bool:
+        with _ml_lock:
+            loaded = 0
+            for horizon in ["next_candle", "5min", "eod"]:
+                m_path, s_path = self._get_paths(symbol, horizon)
+                if os.path.exists(m_path) and os.path.exists(s_path):
+                    try:
+                        self.models[horizon] = joblib.load(m_path)
+                        self.scalers[horizon] = joblib.load(s_path)
+                        loaded += 1
+                    except Exception as e:
+                        logger.error(f"Failed to load ML model from {m_path}: {e}")
+            return loaded == 3
 
     def train(self, df: pd.DataFrame, symbol: str = "default") -> dict:
         result = {}
-        model_key = self._create_features(symbol)
-
         for horizon_name, horizon_candles in [("next_candle", 1), ("5min", 5), ("eod", 30)]:
             if len(df) < 100:
                 result[horizon_name] = {"success": False, "message": "Insufficient data"}
@@ -155,28 +181,49 @@ class MultiHorizonPredictor:
                 result[horizon_name] = {"success": False, "message": "Feature extraction failed"}
                 continue
 
+            # Time-series validation split (last 20% validation)
+            split_idx = int(len(X) * 0.8)
+            X_train, X_val = X[:split_idx], X[split_idx:]
+            y_train, y_val = y[:split_idx], y[split_idx:]
+
             scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
+            X_train_scaled = scaler.fit_transform(X_train)
 
             model = GradientBoostingClassifier(
-                n_estimators=100,
-                max_depth=5,
+                n_estimators=50,
+                max_depth=3,
                 random_state=42,
-                learning_rate=0.1,
+                learning_rate=0.05,
             )
-            model.fit(X_scaled, y)
+            model.fit(X_train_scaled, y_train)
 
-            self.models[horizon_name] = model
-            self.scalers[horizon_name] = scaler
+            accuracy = 0.5
+            if len(X_val) > 0:
+                X_val_scaled = scaler.transform(X_val)
+                accuracy = model.score(X_val_scaled, y_val)
+            else:
+                accuracy = model.score(X_train_scaled, y_train)
 
-            accuracy = model.score(X_scaled, y)
-            result[horizon_name] = {"success": True, "accuracy": round(accuracy * 100, 1)}
+            m_path, s_path = self._get_paths(symbol, horizon_name)
+            with _ml_lock:
+                try:
+                    joblib.dump(model, m_path)
+                    joblib.dump(scaler, s_path)
+                    self.models[horizon_name] = model
+                    self.scalers[horizon_name] = scaler
+                    result[horizon_name] = {"success": True, "accuracy": round(accuracy * 100, 1)}
+                except Exception as e:
+                    logger.error(f"Failed to save model for {symbol} {horizon_name}: {e}")
+                    result[horizon_name] = {"success": False, "message": str(e)}
 
         return result
 
-    def predict(self, df: pd.DataFrame, horizon: str = "next_candle") -> dict:
+    def predict(self, df: pd.DataFrame, symbol: str, horizon: str = "next_candle") -> dict:
         if len(df) < 50:
             return {"direction": "neutral", "confidence": 0, "message": "Insufficient data"}
+
+        if horizon not in self.models:
+            self.load_for_symbol(symbol)
 
         if horizon not in self.models:
             return {"direction": "neutral", "confidence": 0, "message": "Model not trained"}
@@ -186,40 +233,28 @@ class MultiHorizonPredictor:
             return {"direction": "neutral", "confidence": 0, "message": "Feature extraction failed"}
 
         X = X.reshape(1, -1)
-        X_scaled = self.scalers[horizon].transform(X)
+        try:
+            X_scaled = self.scalers[horizon].transform(X)
+            model = self.models[horizon]
+            proba = model.predict_proba(X_scaled)[0]
+            pred = model.predict(X_scaled)[0]
 
-        model = self.models[horizon]
-        proba = model.predict_proba(X_scaled)[0]
-        pred = model.predict(X_scaled)[0]
+            confidence = float(max(proba))
+            direction = "up" if pred == 1 else "down"
 
-        confidence = float(max(proba))
+            return {
+                "direction": direction,
+                "confidence": round(confidence * 100, 1),
+                "probability_up": round(proba[1], 3),
+                "probability_down": round(proba[0], 3),
+            }
+        except Exception as e:
+            logger.error(f"Prediction failed for {symbol} {horizon}: {e}")
+            return {"direction": "neutral", "confidence": 0, "message": f"Inference error: {e}"}
 
-        direction = "up" if pred == 1 else "down"
-
+    def predict_all(self, df: pd.DataFrame, symbol: str) -> dict:
         return {
-            "direction": direction,
-            "confidence": round(confidence * 100, 1),
-            "probability_up": round(proba[1], 3),
-            "probability_down": round(proba[0], 3),
+            "next_candle": self.predict(df, symbol, "next_candle"),
+            "next_5min": self.predict(df, symbol, "5min"),
+            "end_of_day": self.predict(df, symbol, "eod"),
         }
-
-    def predict_all(self, df: pd.DataFrame) -> dict:
-        return {
-            "next_candle": self.predict(df, "next_candle"),
-            "next_5min": self.predict(df, "5min"),
-            "end_of_day": self.predict(df, "eod"),
-        }
-
-    def save(self, path: str):
-        for horizon in self.models:
-            joblib.dump(self.models[horizon], f"{path}_{horizon}_model.joblib")
-            joblib.dump(self.scalers[horizon], f"{path}_{horizon}_scaler.joblib")
-
-    def load(self, path: str) -> bool:
-        for horizon in ["next_candle", "5min", "eod"]:
-            model_path = f"{path}_{horizon}_model.joblib"
-            scaler_path = f"{path}_{horizon}_scaler.joblib"
-            if os.path.exists(model_path) and os.path.exists(scaler_path):
-                self.models[horizon] = joblib.load(model_path)
-                self.scalers[horizon] = joblib.load(scaler_path)
-        return len(self.models) > 0

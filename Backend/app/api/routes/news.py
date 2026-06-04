@@ -8,7 +8,8 @@ router = APIRouter(prefix="/news", tags=["news"])
 
 
 @router.get("/{symbol}", response_model=NewsResponse)
-async def get_news(
+def get_news(
+
     symbol: str,
     news_service: NewsService = Depends(get_news_service),
 ) -> NewsResponse:

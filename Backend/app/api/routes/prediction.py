@@ -1,5 +1,8 @@
 import math
+import threading
+import logging
 from datetime import datetime, timedelta
+import pandas as pd
 from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import get_yfinance_provider, get_market_data_service, get_technicals_service
@@ -10,6 +13,8 @@ from app.services.technicals_service import TechnicalsService
 from app.providers.yfinance_provider import YFinanceProvider
 from app.services.fast_prediction import get_prediction as fallback_prediction
 from app.services.multi_horizon_prediction import MultiHorizonPredictor
+
+logger = logging.getLogger("arise.prediction")
 
 router = APIRouter(prefix="/predict", tags=["prediction"])
 
@@ -32,8 +37,17 @@ def _cache_set(key: str, value: dict) -> None:
     _prediction_cache[key] = (datetime.now().timestamp(), value)
 
 
+def _run_training_background(symbol: str, history: pd.DataFrame) -> None:
+    try:
+        predictor = MultiHorizonPredictor()
+        predictor.train(history, symbol)
+        logger.info(f"Background ML training completed for {symbol}")
+    except Exception as e:
+        logger.error(f"Background ML training failed for {symbol}: {e}")
+
+
 @router.get("/{symbol}", response_model=PredictionResponse)
-async def predict_next(
+def predict_next(
     symbol: str,
     horizon: str = Query(default="next_candle", description="Prediction horizon: next_candle, next_5min, eod"),
     provider: YFinanceProvider = Depends(get_yfinance_provider),
@@ -46,12 +60,22 @@ async def predict_next(
 
     history = provider.get_history(symbol, period="1y", interval="1d")
     
+    predictions = None
     if len(history) >= 100:
-        try:
-            predictor = MultiHorizonPredictor()
-            predictor.train(history, symbol)
-            predictions = predictor.predict_all(history)
-        except Exception:
+        predictor = MultiHorizonPredictor()
+        has_model = predictor.load_for_symbol(symbol)
+        if has_model:
+            try:
+                predictions = predictor.predict_all(history, symbol)
+            except Exception:
+                predictions = fallback_prediction(symbol, history)
+        else:
+            # Trigger background training
+            threading.Thread(
+                target=_run_training_background,
+                args=(symbol, history),
+                daemon=True
+            ).start()
             predictions = fallback_prediction(symbol, history)
     else:
         predictions = fallback_prediction(symbol, history)
@@ -75,7 +99,7 @@ async def predict_next(
 
 
 @router.get("/{symbol}/all", response_model=MultiHorizonResponse)
-async def predict_all(
+def predict_all(
     symbol: str,
     provider: YFinanceProvider = Depends(get_yfinance_provider),
 ) -> MultiHorizonResponse:
@@ -87,12 +111,22 @@ async def predict_all(
 
     history = provider.get_history(symbol, period="1y", interval="1d")
 
+    predictions = None
     if len(history) >= 100:
-        try:
-            predictor = MultiHorizonPredictor()
-            predictor.train(history, symbol)
-            predictions = predictor.predict_all(history)
-        except Exception:
+        predictor = MultiHorizonPredictor()
+        has_model = predictor.load_for_symbol(symbol)
+        if has_model:
+            try:
+                predictions = predictor.predict_all(history, symbol)
+            except Exception:
+                predictions = fallback_prediction(symbol, history)
+        else:
+            # Trigger background training
+            threading.Thread(
+                target=_run_training_background,
+                args=(symbol, history),
+                daemon=True
+            ).start()
             predictions = fallback_prediction(symbol, history)
     else:
         predictions = fallback_prediction(symbol, history)
@@ -106,8 +140,9 @@ async def predict_all(
     return response
 
 
+
 @router.get("/{symbol}/path", response_model=PredictionPathResponse)
-async def predict_path(
+def predict_path(
     symbol: str,
     market_data_service: MarketDataService = Depends(get_market_data_service),
     technicals_service: TechnicalsService = Depends(get_technicals_service),

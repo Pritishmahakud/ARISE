@@ -21,7 +21,8 @@ import {
   ArrowRight,
   ShieldAlert
 } from "lucide-react";
-import { fetchFNOData, fetchPredictionPath } from "../../api";
+import { fetchFNOData, fetchPredictionPath, fetchAnalyticsData } from "../../api";
+
 import * as ind from "../../utils/IndicatorUtils";
 
 function formatNumber(value, options = {}) {
@@ -100,6 +101,10 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
   const [fnoSearch, setFnoSearch] = useState("");
   const [greeksExplanation, setGreeksExplanation] = useState(null);
 
+  // --- Analytics Data ---
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   // --- Smart Alerts ---
   const [alerts, setAlerts] = useState([]); // { id, price, type: 'above'|'below', active: true }
   const [alertPriceInput, setAlertPriceInput] = useState("");
@@ -108,24 +113,30 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
 
   const chartRef = useRef(null);
 
-  // --- Fetch Prediction Path & F&O Data ---
+  // --- Fetch Prediction Path & F&O Data & Analytics ---
   const loadFnoAndPredictions = async (sym) => {
     if (!sym) return;
     setFnoLoading(true);
     setPredictionLoading(true);
+    setAnalyticsLoading(true);
     try {
       const pathData = await fetchPredictionPath(sym);
       if (pathData) setPredictionPath(pathData);
       
       const fData = await fetchFNOData(sym);
       if (fData) setFnoData(fData);
+
+      const aData = await fetchAnalyticsData(sym);
+      if (aData) setAnalyticsData(aData);
     } catch (e) {
-      console.error("F&O/Prediction Path loading error:", e);
+      console.error("F&O/Prediction Path/Analytics loading error:", e);
     } finally {
       setFnoLoading(false);
       setPredictionLoading(false);
+      setAnalyticsLoading(false);
     }
   };
+
 
   useEffect(() => {
     loadFnoAndPredictions(symbol);
@@ -1258,7 +1269,8 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
           { id: "options", label: "Option Chain", icon: Compass },
           { id: "greeks", label: "Option Greeks", icon: BookOpen },
           { id: "oi", label: "OI Analysis", icon: BarChart2 },
-          { id: "futures", label: "Futures carry", icon: Activity }
+          { id: "futures", label: "Futures carry", icon: Activity },
+          { id: "metrics", label: "Quantitative Analytics", icon: TrendingUp }
         ].map(tab => {
           const Icon = tab.icon;
           return (
@@ -1272,6 +1284,7 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
           );
         })}
       </div>
+
 
       {/* Main Tab Render Workspace */}
       <div className="flex-1 min-h-[360px] relative">
@@ -1763,7 +1776,104 @@ export function ChartCard({ symbol, chart, interval, onChangeInterval, technical
             </div>
           </div>
         )}
+
+        {/* TAB 6: QUANTITATIVE ANALYTICS */}
+        {activeTab === "metrics" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 animate-in fade-in duration-200 mt-2">
+            {/* Column 1: Core Risk-Adjusted Metrics */}
+            <div className="border border-border/40 rounded-xl p-5 bg-secondary/15 flex flex-col gap-4">
+              <h3 className="font-bold text-foreground text-sm flex items-center gap-1.5 border-b border-border/30 pb-2">
+                <ShieldAlert className="w-4 h-4 text-primary" /> Risk-Adjusted Return
+              </h3>
+              {analyticsLoading ? (
+                <div className="text-muted-foreground text-xs">Loading analytics...</div>
+              ) : analyticsData ? (
+                <div className="flex flex-col gap-3 font-mono text-xs">
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">Sharpe Ratio</span>
+                    <span className={`font-bold ${analyticsData.sharpe_ratio >= 1.0 ? "text-[oklch(0.72_0.18_162)]" : "text-muted-foreground"}`}>{analyticsData.sharpe_ratio}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">Sortino Ratio</span>
+                    <span className={`font-bold ${analyticsData.sortino_ratio >= 1.2 ? "text-[oklch(0.72_0.18_162)]" : "text-muted-foreground"}`}>{analyticsData.sortino_ratio}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">Annualized Volatility</span>
+                    <span className="font-bold text-foreground">{(analyticsData.volatility * 100).toFixed(2)}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Max Drawdown</span>
+                    <span className="font-bold text-[oklch(0.60_0.22_25)]">{(analyticsData.max_drawdown * 100).toFixed(2)}%</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-xs">Analytics unavailable.</div>
+              )}
+            </div>
+
+            {/* Column 2: Benchmark Relative Metrics */}
+            <div className="border border-border/40 rounded-xl p-5 bg-secondary/15 flex flex-col gap-4">
+              <h3 className="font-bold text-foreground text-sm flex items-center gap-1.5 border-b border-border/30 pb-2">
+                <TrendingUp className="w-4 h-4 text-primary" /> Benchmark (NIFTY 50)
+              </h3>
+              {analyticsLoading ? (
+                <div className="text-muted-foreground text-xs">Loading analytics...</div>
+              ) : analyticsData ? (
+                <div className="flex flex-col gap-3 font-mono text-xs">
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">Beta (Market Sensitivity)</span>
+                    <span className="font-bold text-foreground">{analyticsData.beta}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">Alpha (Excess Return)</span>
+                    <span className={`font-bold ${analyticsData.alpha >= 0 ? "text-[oklch(0.72_0.18_162)]" : "text-[oklch(0.60_0.22_25)]"}`}>{(analyticsData.alpha * 100).toFixed(2)}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Correlation Coefficient</span>
+                    <span className="font-bold text-foreground">{analyticsData.correlation}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-xs">Analytics unavailable.</div>
+              )}
+            </div>
+
+            {/* Column 3: Rolling Returns */}
+            <div className="border border-border/40 rounded-xl p-5 bg-secondary/15 flex flex-col gap-4">
+              <h3 className="font-bold text-foreground text-sm flex items-center gap-1.5 border-b border-border/30 pb-2">
+                <Activity className="w-4 h-4 text-primary" /> Rolling Returns (Absolute)
+              </h3>
+              {analyticsLoading ? (
+                <div className="text-muted-foreground text-xs">Loading analytics...</div>
+              ) : analyticsData?.rolling_returns ? (
+                <div className="flex flex-col gap-3 font-mono text-xs">
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">7-Day Return</span>
+                    <span className={`font-bold ${analyticsData.rolling_returns["7d"] >= 0 ? "text-[oklch(0.72_0.18_162)]" : "text-[oklch(0.60_0.22_25)]"}`}>
+                      {analyticsData.rolling_returns["7d"] >= 0 ? "+" : ""}{analyticsData.rolling_returns["7d"]}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-border/25">
+                    <span className="text-muted-foreground">30-Day Return</span>
+                    <span className={`font-bold ${analyticsData.rolling_returns["30d"] >= 0 ? "text-[oklch(0.72_0.18_162)]" : "text-[oklch(0.60_0.22_25)]"}`}>
+                      {analyticsData.rolling_returns["30d"] >= 0 ? "+" : ""}{analyticsData.rolling_returns["30d"]}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">90-Day Return</span>
+                    <span className={`font-bold ${analyticsData.rolling_returns["90d"] >= 0 ? "text-[oklch(0.72_0.18_162)]" : "text-[oklch(0.60_0.22_25)]"}`}>
+                      {analyticsData.rolling_returns["90d"] >= 0 ? "+" : ""}{analyticsData.rolling_returns["90d"]}%
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-xs">Analytics unavailable.</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
 
       {/* Pop up Overlay Modal for AI Signals details */}
       {selectedSignal && (

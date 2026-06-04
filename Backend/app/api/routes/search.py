@@ -9,7 +9,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 
 @router.get("", response_model=list[SearchResult])
-async def search_symbols(
+def search_symbols(
     q: str = Query(default=""),
     service: SearchService = Depends(get_search_service),
 ) -> list[SearchResult]:
@@ -17,7 +17,7 @@ async def search_symbols(
 
 
 @router.get("/status")
-async def search_status(
+def search_status(
     instrument_master_service: InstrumentMasterService = Depends(get_instrument_master_service),
 ) -> dict:
     return instrument_master_service.status()

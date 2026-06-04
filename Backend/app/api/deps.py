@@ -37,7 +37,7 @@ def get_news_service() -> NewsService:
 
 @lru_cache
 def get_ai_analysis_service() -> AIAnalysisService:
-    return AIAnalysisService(GeminiProvider(settings.gemini_api_key))
+    return AIAnalysisService(GeminiProvider(settings.gemini_api_key), get_yfinance_provider())
 
 
 @lru_cache
@@ -55,6 +55,11 @@ def get_screener_service() -> ScreenerService:
     return ScreenerService(get_market_data_service())
 
 
-@lru_cache
-def get_fno_service() -> FNOService:
     return FNOService(get_market_data_service(), get_technicals_service())
+
+
+@lru_cache
+def get_analytics_service() -> AnalyticsService:
+    from app.services.analytics_service import AnalyticsService
+    return AnalyticsService(get_yfinance_provider())
+

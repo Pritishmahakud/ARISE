@@ -9,7 +9,8 @@ router = APIRouter(prefix="/index", tags=["index"])
 
 
 @router.get("/{name}", response_model=StockOverview)
-async def get_index_overview(
+def get_index_overview(
+
     name: str,
     market_data_service: MarketDataService = Depends(get_market_data_service),
     technicals_service: TechnicalsService = Depends(get_technicals_service),

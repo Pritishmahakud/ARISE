@@ -8,8 +8,9 @@ router = APIRouter(prefix="/screener", tags=["screener"])
 
 
 @router.get("/top-volume", response_model=list[QuoteSnapshot])
-async def get_top_volume(
+def get_top_volume(
     screener_service: ScreenerService = Depends(get_screener_service),
+
 ) -> list[QuoteSnapshot]:
     return screener_service.top_volume()
 

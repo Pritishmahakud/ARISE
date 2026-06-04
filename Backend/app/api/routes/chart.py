@@ -8,8 +8,9 @@ router = APIRouter(prefix="/chart", tags=["chart"])
 
 
 @router.get("/{symbol}", response_model=ChartResponse)
-async def get_chart(
+def get_chart(
     symbol: str,
+
     period: str = Query(default="6mo"),
     interval: str = Query(default="1d"),
     market_data_service: MarketDataService = Depends(get_market_data_service),

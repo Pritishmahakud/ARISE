@@ -2,6 +2,8 @@ import pandas as pd
 from app.models.chart import Candle, ChartResponse
 from app.models.stock import QuoteSnapshot
 from app.providers.yfinance_provider import YFinanceProvider
+from app.core.redis import cache
+from app.core.config import settings
 
 
 class MarketDataService:
@@ -9,7 +11,13 @@ class MarketDataService:
         self.provider = provider
 
     def get_quote(self, symbol: str) -> QuoteSnapshot:
+        cache_key = f"quote:{symbol.upper()}"
+        cached = cache.get(cache_key)
+        if cached:
+            return QuoteSnapshot(**cached)
+
         info = self.provider.get_info(symbol)
+
         history = self.provider.get_history(symbol, period="1mo", interval="1d")
 
         current_price = info.get("currentPrice") or info.get("regularMarketPrice")
@@ -52,7 +60,7 @@ class MarketDataService:
             if not volume:
                 volume = int(history["Volume"].iloc[-1])
 
-        return QuoteSnapshot(
+        res = QuoteSnapshot(
             symbol=symbol.upper(),
             name=info.get("shortName") or info.get("longName") or symbol.upper(),
             current_price=current_price,
@@ -70,10 +78,18 @@ class MarketDataService:
             fifty_two_week_low=info.get("fiftyTwoWeekLow") or (day_low * 0.9 if day_low else None),
             currency=info.get("currency") or "INR",
         )
+        cache.set(cache_key, res.model_dump(), ttl=settings.cache_ttl_quotes_seconds)
+        return res
 
     def get_chart(self, symbol: str, period: str, interval: str) -> ChartResponse:
+        cache_key = f"chart:{symbol.upper()}:{period}:{interval}"
+        cached = cache.get(cache_key)
+        if cached:
+            return ChartResponse(**cached)
+
         mapped_period = period
         mapped_interval = interval
+
 
         # Normalize interval naming and restrict period limits for intraday data
         if interval == "1min":
@@ -123,5 +139,9 @@ class MarketDataService:
             )
             for index, row in history.iterrows()
         ]
-        return ChartResponse(symbol=symbol.upper(), interval=interval, period=period, candles=candles)
+        chart_res = ChartResponse(symbol=symbol.upper(), interval=interval, period=period, candles=candles)
+        ttl = 60 if interval in ["1min", "5min", "15min", "1m", "5m", "15m"] else 300
+        cache.set(cache_key, chart_res.model_dump(), ttl=ttl)
+        return chart_res
+
 

@@ -68,8 +68,9 @@ class CompositeAnalysis:
 
 
 class AIAnalysisService:
-    def __init__(self, provider: GeminiProvider):
+    def __init__(self, provider: GeminiProvider, yf_provider: YFinanceProvider):
         self.provider = provider
+        self.yf_provider = yf_provider
 
     def analyze(
         self,
@@ -78,11 +79,15 @@ class AIAnalysisService:
         technicals: TechnicalSnapshot,
         news: list[NewsArticle],
     ) -> AnalysisResponse:
-        from app.providers.yfinance_provider import YFinanceProvider
+        cache_key = f"ai_analysis:{symbol.upper()}"
+        cached = cache.get(cache_key)
+        if cached:
+            return AnalysisResponse(**cached)
+
         from app.services.pattern_detector import detect_patterns
 
         try:
-            history = YFinanceProvider().get_history(symbol, period="1mo", interval="1d")
+            history = self.yf_provider.get_history(symbol, period="1mo", interval="1d")
             patterns = detect_patterns(history)
         except Exception:
             patterns = []
@@ -93,7 +98,7 @@ class AIAnalysisService:
         summary = ai_text or composite.summary
         model_used = "gemini-2.5-flash" if ai_text else "composite-rule-engine"
 
-        return AnalysisResponse(
+        res = AnalysisResponse(
             symbol=symbol.upper(),
             bias=composite.bias,
             short_term_bias=composite.short_term_bias,
@@ -107,6 +112,8 @@ class AIAnalysisService:
             signal_scores=composite.signal_scores,
             model_used=model_used,
         )
+        cache.set(cache_key, res.model_dump(), ttl=settings.cache_ttl_analysis_seconds)
+        return res
 
     def _composite_analysis(
         self,

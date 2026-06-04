@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     news_api_key: str | None = Field(default=None, alias="NEWS_API_KEY")
     gemini_api_key: str | None = Field(default=None, alias="GEMINI_API_KEY")
+    redis_url: str | None = Field(default=None, alias="REDIS_URL")
+
 
     cache_ttl_quotes_seconds: int = Field(default=300, alias="CACHE_TTL_QUOTES_SECONDS")
     cache_ttl_news_seconds: int = Field(default=1800, alias="CACHE_TTL_NEWS_SECONDS")

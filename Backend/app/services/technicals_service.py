@@ -1,5 +1,6 @@
 from app.models.technicals import TechnicalSnapshot
 from app.providers.yfinance_provider import YFinanceProvider
+from app.core.redis import cache
 from app.utils.indicators import (
     calculate_dema,
     calculate_rsi,
@@ -68,8 +69,14 @@ class TechnicalsService:
         self.provider = provider
 
     def get_snapshot(self, symbol: str, include_intraday: bool = False) -> TechnicalSnapshot:
+        cache_key = f"technicals:{symbol.upper()}:{int(include_intraday)}"
+        cached = cache.get(cache_key)
+        if cached:
+            return TechnicalSnapshot(**cached)
+
         period = "5d" if include_intraday else "1y"
         interval = "5m" if include_intraday else "1d"
+
         
         history = self.provider.get_history(symbol, period=period, interval=interval)
         if history.empty:
@@ -108,7 +115,7 @@ class TechnicalsService:
             ema_50 or 0,
         )
 
-        return TechnicalSnapshot(
+        res = TechnicalSnapshot(
             dma_20=None if dma_20 is None else round(float(dma_20), 2),
             dma_50=None if dma_50 is None else round(float(dma_50), 2),
             dma_200=None if dma_200 is None else round(float(dma_200), 2),
@@ -129,3 +136,6 @@ class TechnicalsService:
             signal=signal,
             signal_strength=signal_strength,
         )
+        ttl = 60 if include_intraday else 300
+        cache.set(cache_key, res.model_dump(), ttl=ttl)
+        return res

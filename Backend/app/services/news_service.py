@@ -1,6 +1,8 @@
 from app.models.news import NewsArticle
 from app.providers.newsapi_provider import NewsApiProvider
 from app.providers.rss_provider import RssProvider
+from app.core.redis import cache
+from app.core.config import settings
 
 
 class NewsService:
@@ -9,6 +11,11 @@ class NewsService:
         self.rss_provider = rss_provider
 
     def get_articles(self, symbol: str) -> list[NewsArticle]:
+        cache_key = f"news:{symbol.upper()}"
+        cached = cache.get(cache_key)
+        if cached:
+            return [NewsArticle(**item) for item in cached]
+
         query = f"{symbol} NSE stock India"
         raw_articles = self.news_provider.fetch(query)
         if not raw_articles:
@@ -27,5 +34,7 @@ class NewsService:
                     summary=item.get("description"),
                 )
             )
+        cache.set(cache_key, [item.model_dump() for item in articles], ttl=settings.cache_ttl_news_seconds)
         return articles
+
 

@@ -9,8 +9,9 @@ router = APIRouter(prefix="/stock", tags=["stock"])
 
 
 @router.get("/{symbol}", response_model=StockOverview)
-async def get_stock_overview(
+def get_stock_overview(
     symbol: str,
+
     market_data_service: MarketDataService = Depends(get_market_data_service),
     technicals_service: TechnicalsService = Depends(get_technicals_service),
 ) -> StockOverview:

@@ -12,6 +12,15 @@ services:
       - GEMINI_API_KEY=
       - NEWS_API_KEY=
       - ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     restart: always
 
   frontend:
@@ -26,3 +35,4 @@ services:
     depends_on:
       - backend
     restart: always
+

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.api.deps import (
     get_ai_analysis_service,
@@ -13,11 +15,16 @@ from app.services.news_service import NewsService
 from app.services.technicals_service import TechnicalsService
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("/{symbol}", response_model=AnalysisResponse)
-async def get_analysis(
+@limiter.limit("10/minute")
+def get_analysis(
+    request: Request,
     symbol: str,
+
+
     market_data_service: MarketDataService = Depends(get_market_data_service),
     technicals_service: TechnicalsService = Depends(get_technicals_service),
     news_service: NewsService = Depends(get_news_service),

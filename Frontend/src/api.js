@@ -79,3 +79,9 @@ export async function fetchPredictionPath(symbol) {
   return requestSafe(`/api/predict/${encodedSymbol}/path`, null);
 }
 
+export async function fetchAnalyticsData(symbol) {
+  const encodedSymbol = encodeURIComponent(symbol);
+  return requestSafe(`/api/analytics/${encodedSymbol}`, null);
+}
+
+

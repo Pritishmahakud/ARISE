@@ -8,7 +8,8 @@ router = APIRouter(prefix="/fno", tags=["fno"])
 
 
 @router.get("/{symbol}", response_model=FNOResponse)
-async def get_fno_data(
+def get_fno_data(
+
     symbol: str,
     fno_service: FNOService = Depends(get_fno_service),
 ) -> FNOResponse:
