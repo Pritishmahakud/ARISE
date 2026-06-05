@@ -61,6 +61,7 @@ def predict_next(
     history = provider.get_history(symbol, period="1y", interval="1d")
     
     predictions = None
+    is_fallback = False
     if len(history) >= 100:
         predictor = MultiHorizonPredictor()
         has_model = predictor.load_for_symbol(symbol)
@@ -69,6 +70,7 @@ def predict_next(
                 predictions = predictor.predict_all(history, symbol)
             except Exception:
                 predictions = fallback_prediction(symbol, history)
+                is_fallback = True
         else:
             # Trigger background training
             threading.Thread(
@@ -77,8 +79,10 @@ def predict_next(
                 daemon=True
             ).start()
             predictions = fallback_prediction(symbol, history)
+            is_fallback = True
     else:
         predictions = fallback_prediction(symbol, history)
+        is_fallback = True
 
     horizon_key = "next_candle"
     if horizon == "next_5min":
@@ -94,7 +98,8 @@ def predict_next(
         prediction=pred,
         timestamp=datetime.now().isoformat(),
     )
-    _cache_set(cache_key, response.model_dump())
+    if not is_fallback:
+        _cache_set(cache_key, response.model_dump())
     return response
 
 
@@ -112,6 +117,7 @@ def predict_all(
     history = provider.get_history(symbol, period="1y", interval="1d")
 
     predictions = None
+    is_fallback = False
     if len(history) >= 100:
         predictor = MultiHorizonPredictor()
         has_model = predictor.load_for_symbol(symbol)
@@ -120,6 +126,7 @@ def predict_all(
                 predictions = predictor.predict_all(history, symbol)
             except Exception:
                 predictions = fallback_prediction(symbol, history)
+                is_fallback = True
         else:
             # Trigger background training
             threading.Thread(
@@ -128,15 +135,18 @@ def predict_all(
                 daemon=True
             ).start()
             predictions = fallback_prediction(symbol, history)
+            is_fallback = True
     else:
         predictions = fallback_prediction(symbol, history)
+        is_fallback = True
 
     response = MultiHorizonResponse(
         symbol=symbol.upper(),
         predictions=predictions,
         timestamp=datetime.now().isoformat(),
     )
-    _cache_set(cache_key, response.model_dump())
+    if not is_fallback:
+        _cache_set(cache_key, response.model_dump())
     return response
 
 
