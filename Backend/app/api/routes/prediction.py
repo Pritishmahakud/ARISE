@@ -65,6 +65,13 @@ def predict_next(
     if len(history) >= 100:
         predictor = MultiHorizonPredictor()
         has_model = predictor.load_for_symbol(symbol)
+        if not has_model:
+            try:
+                predictor.train(history, symbol)
+                has_model = True
+            except Exception as e:
+                logger.error(f"Synchronous ML training failed for {symbol}: {e}")
+        
         if has_model:
             try:
                 predictions = predictor.predict_all(history, symbol)
@@ -72,12 +79,6 @@ def predict_next(
                 predictions = fallback_prediction(symbol, history)
                 is_fallback = True
         else:
-            # Trigger background training
-            threading.Thread(
-                target=_run_training_background,
-                args=(symbol, history),
-                daemon=True
-            ).start()
             predictions = fallback_prediction(symbol, history)
             is_fallback = True
     else:
@@ -121,6 +122,13 @@ def predict_all(
     if len(history) >= 100:
         predictor = MultiHorizonPredictor()
         has_model = predictor.load_for_symbol(symbol)
+        if not has_model:
+            try:
+                predictor.train(history, symbol)
+                has_model = True
+            except Exception as e:
+                logger.error(f"Synchronous ML training failed for {symbol}: {e}")
+                
         if has_model:
             try:
                 predictions = predictor.predict_all(history, symbol)
@@ -128,12 +136,6 @@ def predict_all(
                 predictions = fallback_prediction(symbol, history)
                 is_fallback = True
         else:
-            # Trigger background training
-            threading.Thread(
-                target=_run_training_background,
-                args=(symbol, history),
-                daemon=True
-            ).start()
             predictions = fallback_prediction(symbol, history)
             is_fallback = True
     else:
